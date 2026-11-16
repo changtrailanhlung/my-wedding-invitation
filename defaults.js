@@ -1,6 +1,6 @@
 /* Nội dung mẫu, dùng khi chưa có config.json */
 window.INVITE_DEFAULTS = {
-  eyebrow: 'Thiệp mời tiệc báo hỷ', groomName: 'Quốc Anh', brideName: 'Ngọc Lan',
+  eyebrow: 'Thiệp mời cưới', groomName: 'Quốc Anh', brideName: 'Ngọc Lan',
   groomFull: 'Nguyễn Quốc Anh', brideFull: 'Lê Ngọc Lan',
   groomFamily: 'Ông Nguyễn Văn An\nBà Trần Thị Bình', brideFamily: 'Ông Lê Văn Cường\nBà Phạm Thị Dung',
   city: 'TP. Hồ Chí Minh',
