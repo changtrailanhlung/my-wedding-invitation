@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Quản trị thiệp</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,500&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+body.admin{padding:0;background:var(--bg)}
+.bar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;justify-content:space-between;
+  padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--line)}
+.bar h1{font-size:20px;font-style:italic}
+.bar .acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.status{font-size:13px;color:var(--muted)}
+.status.dirty{color:var(--accent);font-weight:500}
+.sm{min-height:38px;padding:0 14px;border:1px solid var(--line);background:var(--surface);border-radius:999px;cursor:pointer;font-size:13px}
+.sm.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.sm[disabled]{opacity:.5;cursor:default}
+.help{font-size:13px;color:var(--muted);margin:0}
+.login{max-width:520px;margin:32px auto;padding:24px max(16px,env(safe-area-inset-left,0px));display:grid;gap:14px}
+.login h2{font-size:26px;font-style:italic}
+.login ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px}
+.login code{background:var(--tint);padding:1px 6px;border-radius:4px;font-size:13px}
+.err{color:#B3261E;font-size:13px;min-height:1.2em}
+@media (prefers-color-scheme:dark){.err{color:#FF8A80}}
+.cols{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:20px;align-items:start;
+  padding:20px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+.panel{display:grid;gap:14px;align-content:start;background:var(--surface);border:1px solid var(--line);padding:18px;border-radius:6px;min-width:0}
+.panel h3{font-family:var(--font-body);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin:14px 0 0;font-weight:600}
+.panel h3:first-child{margin-top:0}
+.img-row{display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;font-size:13px}
+.img-row .th{width:56px;height:56px;border-radius:4px;background:var(--tint) center/cover}
+.img-row .acts{display:flex;gap:6px}
+.prev{position:sticky;top:76px;min-width:0}
+.prev iframe{width:100%;height:calc(100vh - 100px);min-height:560px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+@media (max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}.prev{position:static}.prev iframe{height:720px}}
+</style>
+</head>
+<body class="admin">
+<header class="bar">
+  <h1>Quản trị thiệp</h1>
+  <div class="acts" id="barActs" hidden>
+    <span class="status" id="status">Chưa có thay đổi</span>
+    <button class="sm pri" type="button" id="publishBtn" disabled>Đăng thiệp</button>
+    <button class="sm" type="button" id="revertBtn" disabled>Hủy thay đổi</button>
+    <a class="sm" href="index.html" target="_blank" rel="noopener" style="display:inline-grid;place-items:center;text-decoration:none;color:inherit">Xem thiệp</a>
+    <button class="sm" type="button" id="logoutBtn">Đăng xuất</button>
+  </div>
+</header>
+
+<section class="login" id="login">
+  <h2>Đăng nhập quản trị</h2>
+  <p class="help">Trang này lưu thay đổi thẳng vào kho GitHub của thiệp. Chỉ người có token của bạn mới đăng được nội dung mới. Khách mở trang này sẽ không sửa được gì.</p>
+  <ol>
+    <li>Mở GitHub, vào <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens</b>, bấm <b>Generate new token</b>.</li>
+    <li>Ở mục <b>Repository access</b>, chọn <b>Only select repositories</b> rồi chọn <code>my-wedding-invitation</code>.</li>
+    <li>Ở mục <b>Permissions → Repository permissions</b>, đặt <b>Contents</b> là <b>Read and write</b>.</li>
+    <li>Tạo token, sao chép rồi dán vào ô dưới đây.</li>
+  </ol>
+  <form id="loginForm" style="margin-top:0">
+    <label for="tok">Token GitHub<input id="tok" type="password" autocomplete="off" required></label>
+    <div class="err" id="loginErr" role="alert"></div>
+    <button class="btn" type="submit" id="loginBtn">Đăng nhập</button>
+  </form>
+  <p class="help">Token chỉ được lưu trong trình duyệt của bạn. Đừng đăng nhập trên máy dùng chung.</p>
+</section>
+
+<div class="cols" id="app" hidden>
+  <div class="panel" id="formBox"></div>
+  <div class="prev"><iframe id="frame" src="index.html?preview" title="Xem trước thiệp"></iframe></div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<input type="file" accept="image/*" id="filePick" hidden>
+
+<script src="defaults.js"></script>
+<script>
+(function () {
+  var OWNER = 'changtrailanhlung', REPO = 'my-wedding-invitation', BRANCH = 'main';
+  var TOKEN_KEY = 'wedding-admin-token';
+  var FIELDS = [
+    ['Cô dâu & chú rể', [['groomName', 'Tên chú rể (ngắn)'], ['brideName', 'Tên cô dâu (ngắn)'], ['groomFull', 'Họ tên đầy đủ chú rể'], ['brideFull', 'Họ tên đầy đủ cô dâu'], ['eyebrow', 'Dòng tiêu đề trên bìa'], ['city', 'Thành phố trên bìa']]],
+    ['Thời gian', [['date', 'Ngày tổ chức', 'date'], ['receptionTime', 'Giờ đón khách', 'time'], ['startTime', 'Giờ khai tiệc', 'time'], ['rsvpDeadline', 'Hạn xác nhận tham dự', 'date']]],
+    ['Địa điểm', [['venue', 'Tên nhà hàng / trung tâm tiệc cưới'], ['hall', 'Tên sảnh'], ['address', 'Địa chỉ', 'area'], ['dress', 'Gợi ý trang phục', 'area']]],
+    ['Lời văn', [['invite', 'Lời mời', 'area'], ['story', 'Câu chuyện của đôi bạn', 'area'], ['thanks', 'Lời cảm ơn cuối thiệp', 'area']]],
+    ['Gia đình', [['groomFamily', 'Nhà trai (mỗi dòng một người)', 'area'], ['brideFamily', 'Nhà gái (mỗi dòng một người)', 'area']]],
+    ['Liên hệ & mừng cưới', [['contactName', 'Người nhận xác nhận'], ['contactPhone', 'Số điện thoại / Zalo'], ['bankName', 'Ngân hàng'], ['bankAcc', 'Số tài khoản (để trống nếu muốn ẩn phần mừng cưới)'], ['bankHolder', 'Chủ tài khoản']]]
+  ];
+  var IMGS = [['cover', 'Ảnh bìa'], ['couple', 'Ảnh cô dâu chú rể'], ['g1', 'Album 1'], ['g2', 'Album 2'], ['g3', 'Album 3'], ['g4', 'Album 4'], ['qr', 'Mã QR mừng cưới']];
+
+  function $(s) { return document.querySelector(s); }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  var token = '', cfg = null, saved = null, pending = {}, pickKey = null, busy = false;
+  var tt; function toast(msg) { var t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(tt); tt = setTimeout(function () { t.hidden = true; }, 3800); }
+
+  function gh(path, opts) {
+    opts = opts || {};
+    var headers = Object.assign({ 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + token, 'X-GitHub-Api-Version': '2022-11-28' }, opts.headers || {});
+    return fetch('https://api.github.com/repos/' + OWNER + '/' + REPO + path, Object.assign({}, opts, { headers: headers }));
+  }
+  function b64utf8(s) { var bytes = new TextEncoder().encode(s), bin = ''; bytes.forEach(function (b) { bin += String.fromCharCode(b); }); return btoa(bin); }
+  async function getSha(path) {
+    var r = await gh('/contents/' + path + '?ref=' + BRANCH + '&t=' + Date.now());
+    if (r.status === 404) return null;
+    if (!r.ok) throw new Error('Không đọc được ' + path + ' (' + r.status + ')');
+    return (await r.json()).sha;
+  }
+  async function putFile(path, b64, message) {
+    var sha = await getSha(path), body = { message: message, content: b64, branch: BRANCH };
+    if (sha) body.sha = sha;
+    var r = await gh('/contents/' + path, { method: 'PUT', body: JSON.stringify(body) });
+    if (!r.ok) {
+      if (r.status === 401 || r.status === 403 || r.status === 404) throw new Error('Token không có quyền ghi vào kho này.');
+      if (r.status === 409 || r.status === 422) throw new Error('Có người vừa cập nhật cùng lúc. Hãy tải lại trang rồi thử lại.');
+      throw new Error('GitHub báo lỗi ' + r.status);
+    }
+  }
+
+  /* Đăng nhập */
+  async function verify(t) {
+    token = t;
+    var r = await gh('');
+    if (r.status === 401) throw new Error('Token không đúng hoặc đã hết hạn.');
+    if (r.status === 404) throw new Error('Token này không truy cập được kho ' + REPO + '.');
+    if (!r.ok) throw new Error('GitHub báo lỗi ' + r.status);
+    var j = await r.json();
+    if (!j.permissions || !j.permissions.push) throw new Error('Token chưa có quyền ghi. Hãy đặt Contents là Read and write.');
+  }
+  async function loadConfig() {
+    var r = await gh('/contents/config.json?ref=' + BRANCH + '&t=' + Date.now(), { headers: { 'Accept': 'application/vnd.github.raw+json' } });
+    var c = null;
+    if (r.ok) { try { c = JSON.parse(await r.text()); } catch (e) {} }
+    var base = clone(window.INVITE_DEFAULTS);
+    var out = Object.assign(base, c || {});
+    out.images = Object.assign({}, (c && c.images) || {});
+    return out;
+  }
+  async function enter(t) {
+    await verify(t);
+    try { localStorage.setItem(TOKEN_KEY, t); } catch (e) {}
+    cfg = await loadConfig(); saved = clone(cfg); pending = {};
+    $('#login').hidden = true; $('#app').hidden = false; $('#barActs').hidden = false;
+    buildForm(); refreshStatus(); sendPreview();
+  }
+  $('#loginForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var btn = $('#loginBtn'), err = $('#loginErr'); err.textContent = ''; btn.disabled = true; btn.textContent = 'Đang kiểm tra...';
+    try { await enter($('#tok').value.trim()); }
+    catch (ex) { err.textContent = ex.message || 'Không đăng nhập được.'; token = ''; }
+    btn.disabled = false; btn.textContent = 'Đăng nhập';
+  });
+  $('#logoutBtn').addEventListener('click', function () {
+    try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    token = ''; location.reload();
+  });
+
+  /* Xem trước */
+  function previewCfg() { var c = clone(cfg); Object.keys(pending).forEach(function (k) { c.images[k] = pending[k]; }); return c; }
+  function sendPreview() { var f = $('#frame'); if (f.contentWindow && cfg) f.contentWindow.postMessage({ type: 'config', config: previewCfg() }, location.origin); }
+  window.addEventListener('message', function (e) {
+    if (e.origin === location.origin && e.source === $('#frame').contentWindow && e.data && e.data.type === 'ready') sendPreview();
+  });
+  function isDirty() { return JSON.stringify(cfg) !== JSON.stringify(saved) || Object.keys(pending).length > 0; }
+  function refreshStatus() {
+    var d = isDirty(), s = $('#status');
+    s.textContent = d ? 'Có thay đổi chưa đăng. Khách chưa nhìn thấy.' : 'Chưa có thay đổi';
+    s.classList.toggle('dirty', d);
+    $('#publishBtn').disabled = !d || busy; $('#revertBtn').disabled = !d || busy;
+  }
+  function changed() { refreshStatus(); sendPreview(); }
+  window.addEventListener('beforeunload', function (e) { if (cfg && isDirty()) { e.preventDefault(); e.returnValue = ''; } });
+
+  /* Form */
+  function srcOf(k) { return pending[k] || cfg.images[k] || ''; }
+  function buildForm() {
+    var box = $('#formBox'); box.textContent = '';
+    var p = document.createElement('p'); p.className = 'help';
+    p.textContent = 'Sửa xong bấm "Đăng thiệp" ở thanh trên. Khách chỉ thấy bản đã đăng, và cần khoảng 1 đến 2 phút để GitHub cập nhật trang.';
+    box.append(p);
+    FIELDS.forEach(function (g) {
+      var h = document.createElement('h3'); h.textContent = g[0]; box.append(h);
+      g[1].forEach(function (f) {
+        var k = f[0], type = f[2];
+        var l = document.createElement('label'); l.htmlFor = 'f_' + k; l.append(f[1]);
+        var inp = document.createElement(type === 'area' ? 'textarea' : 'input');
+        inp.id = 'f_' + k; if (type && type !== 'area') inp.type = type; inp.value = cfg[k] || '';
+        inp.addEventListener('input', function () { cfg[k] = inp.value; changed(); });
+        l.append(inp); box.append(l);
+      });
+    });
+    var h = document.createElement('h3'); h.textContent = 'Hình ảnh'; box.append(h);
+    IMGS.forEach(function (it) {
+      var k = it[0], row = document.createElement('div'); row.className = 'img-row';
+      var th = document.createElement('div'); th.className = 'th'; var s = srcOf(k); if (s) th.style.backgroundImage = 'url("' + s + '")';
+      var nm = document.createElement('span'); nm.textContent = it[1] + (pending[k] ? ' (mới)' : '');
+      var acts = document.createElement('div'); acts.className = 'acts';
+      var b1 = document.createElement('button'); b1.type = 'button'; b1.className = 'sm pri'; b1.textContent = 'Chọn ảnh';
+      b1.onclick = function () { pickKey = k; $('#filePick').value = ''; $('#filePick').click(); };
+      var b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'sm'; b2.textContent = 'Xóa';
+      b2.onclick = function () { delete cfg.images[k]; delete pending[k]; buildForm(); changed(); };
+      acts.append(b1, b2); row.append(th, nm, acts); box.append(row);
+    });
+  }
+  $('#filePick').addEventListener('change', function (e) {
+    var f = e.target.files[0]; if (!f || !pickKey) return;
+    var key = pickKey, r = new FileReader();
+    r.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var max = key === 'qr' ? 700 : 1600, k = Math.min(1, max / Math.max(img.width, img.height));
+        var c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        pending[key] = c.toDataURL('image/jpeg', 0.85); buildForm(); changed();
+      };
+      img.onerror = function () { toast('Không đọc được ảnh này.'); };
+      img.src = r.result;
+    };
+    r.readAsDataURL(f);
+  });
+
+  /* Đăng thiệp: ghi ảnh mới rồi config.json */
+  $('#publishBtn').addEventListener('click', async function () {
+    if (busy || !isDirty()) return;
+    busy = true; var btn = $('#publishBtn'); btn.textContent = 'Đang đăng...'; refreshStatus();
+    try {
+      var next = clone(cfg), keys = Object.keys(pending), stamp = Date.now();
+      for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        btn.textContent = 'Đang tải ảnh ' + (i + 1) + '/' + keys.length + '...';
+        await putFile('images/' + key + '.jpg', pending[key].split(',')[1], 'Cập nhật ảnh ' + key);
+        next.images[key] = 'images/' + key + '.jpg?v=' + stamp;
+      }
+      btn.textContent = 'Đang lưu nội dung...';
+      await putFile('config.json', b64utf8(JSON.stringify(next, null, 2) + '\n'), 'Cập nhật nội dung thiệp');
+      cfg = next; saved = clone(next); pending = {};
+      buildForm(); toast('Đã đăng thiệp. Trang cho khách cập nhật sau 1 đến 2 phút.');
+    } catch (ex) { toast(ex.message || 'Chưa đăng được, hãy thử lại.'); }
+    busy = false; btn.textContent = 'Đăng thiệp'; refreshStatus(); sendPreview();
+  });
+  $('#revertBtn').addEventListener('click', function () {
+    cfg = clone(saved); pending = {}; buildForm(); changed();
+  });
+
+  /* Tự đăng nhập lại nếu đã lưu token */
+  var stored = ''; try { stored = localStorage.getItem(TOKEN_KEY) || ''; } catch (e) {}
+  if (stored) {
+    $('#loginBtn').disabled = true; $('#loginBtn').textContent = 'Đang đăng nhập...';
+    enter(stored).catch(function (ex) {
+      $('#loginErr').textContent = ex.message || ''; token = '';
+      try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    }).then(function () { $('#loginBtn').disabled = false; $('#loginBtn').textContent = 'Đăng nhập'; });
+  }
+})();
+</script>
+</body>
+</html>
