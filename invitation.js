@@ -294,6 +294,11 @@
       }
     }
     document.title = state.groomName + ' & ' + state.brideName;
+    var fav = $('#favicon');
+    if (fav) {
+      var acc = isHex(state.accent) ? state.accent.replace('#', '%23') : '%23A64B63';
+      fav.href = state.images.favicon || ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='" + acc + "' d='M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.6 5 6 5c2.1 0 3.6 1.2 4.5 2.6.3.4.9.4 1.2 0C12.6 6.2 14.1 5 16.2 5c3.4 0 5.1 3.4 3.6 6.8C19.5 16.4 12 21 12 21z'/%3E%3C/svg%3E");
+    }
     $$('.slot[data-img]').forEach(function (el) {
       var src = state.images[el.dataset.img];
       el.classList.toggle('empty', !src);
