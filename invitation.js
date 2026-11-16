@@ -96,8 +96,18 @@
 
   function show() { document.body.classList.remove('loading'); }
   var isPreview = /[?&]preview\b/.test(location.search);
+  function initSeal() {
+    if (isPreview) return;
+    document.body.classList.add('sealed');
+    $('#openBtn').addEventListener('click', function (e) {
+      e.preventDefault();
+      document.body.classList.remove('sealed'); document.body.classList.add('opened');
+      var t = $('#ngay'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
 
   function boot() {
+    initSeal();
     initRsvp();
     setInterval(tick, 1000);
     window.addEventListener('message', function (e) {
