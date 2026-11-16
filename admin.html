@@ -87,7 +87,21 @@ body.admin{padding:0;background:var(--bg)}
 <script>
 (function () {
   var OWNER = 'changtrailanhlung', REPO = 'my-wedding-invitation', BRANCH = 'main';
-  var TOKEN_KEY = 'wedding-admin-token';
+  var TOKEN_KEY = 'wedding-admin-token', SHEET_KEY = 'wedding-admin-sheet';
+  var APPS_SCRIPT = [
+    'function doPost(e) {',
+    '  var sh = SpreadsheetApp.getActiveSheet();',
+    '  var d = {};',
+    '  try { d = JSON.parse(e.postData.contents); } catch (err) {}',
+    "  if (sh.getLastRow() === 0) sh.appendRow(['Thời gian', 'Họ tên', 'Số người', 'Lời chúc']);",
+    "  sh.appendRow([new Date(), String(d.name || '').slice(0, 200), String(d.count || '').slice(0, 50), String(d.note || '').slice(0, 1000)]);",
+    "  return ContentService.createTextOutput('ok');",
+    '}'
+  ].join('\n');
+  function copyPlain(text, okMsg) {
+    function fb() { var t = document.createElement('textarea'); t.value = text; document.body.append(t); t.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (e) {} t.remove(); toast(ok ? okMsg : 'Không sao chép được, hãy chọn và sao chép thủ công.'); }
+    try { navigator.clipboard.writeText(text).then(function () { toast(okMsg); }, fb); } catch (e) { fb(); }
+  }
   var FIELDS = [
     ['Cô dâu & chú rể', [['groomName', 'Tên chú rể (ngắn)'], ['brideName', 'Tên cô dâu (ngắn)'], ['groomFull', 'Họ tên đầy đủ chú rể'], ['brideFull', 'Họ tên đầy đủ cô dâu'], ['eyebrow', 'Dòng tiêu đề trên bìa'], ['city', 'Thành phố trên bìa']]],
     ['Thời gian', [['date', 'Ngày tổ chức', 'date'], ['receptionTime', 'Giờ đón khách', 'time'], ['startTime', 'Giờ khai tiệc', 'time'], ['rsvpDeadline', 'Hạn xác nhận tham dự', 'date']]],
@@ -253,6 +267,35 @@ body.admin{padding:0;background:var(--bg)}
     var rv = document.createElement('span'); rv.textContent = (cfg.overlay || 88) + '%';
     ro.addEventListener('input', function () { cfg.overlay = +ro.value; rv.textContent = ro.value + '%'; changed(); });
     rg.append(ro, rv); ol.append(rg); box.append(ol);
+    var rh = document.createElement('h3'); rh.textContent = 'Danh sách xác nhận tham dự'; box.append(rh);
+    var rp = document.createElement('p'); rp.className = 'help';
+    rp.textContent = 'Khách bấm "Gửi xác nhận" thì họ tên, số người và lời chúc được ghi vào Google Sheet của bạn. Chưa cài thì khách vẫn soạn lời nhắn để gửi qua Zalo như cũ.';
+    box.append(rp);
+    var rl = document.createElement('label'); rl.htmlFor = 'f_rsvpUrl'; rl.append('Link nhận xác nhận (dán URL Web app từ Google Apps Script)');
+    var ri = document.createElement('input'); ri.id = 'f_rsvpUrl'; ri.type = 'url'; ri.placeholder = 'https://script.google.com/macros/s/.../exec'; ri.value = cfg.rsvpUrl || '';
+    ri.addEventListener('input', function () { cfg.rsvpUrl = ri.value.trim(); changed(); });
+    rl.append(ri); box.append(rl);
+    var sl = document.createElement('label'); sl.htmlFor = 'f_sheet'; sl.append('Link Google Sheet để bạn mở xem danh sách (chỉ lưu trên máy bạn, không đăng lên thiệp)');
+    var si = document.createElement('input'); si.id = 'f_sheet'; si.type = 'url'; si.placeholder = 'https://docs.google.com/spreadsheets/d/...';
+    try { si.value = localStorage.getItem(SHEET_KEY) || ''; } catch (e) {}
+    si.addEventListener('input', function () { try { localStorage.setItem(SHEET_KEY, si.value.trim()); } catch (e) {} });
+    sl.append(si); box.append(sl);
+    var rr = document.createElement('div'); rr.className = 'row2';
+    var o1 = document.createElement('button'); o1.type = 'button'; o1.className = 'sm pri'; o1.textContent = 'Mở danh sách xác nhận';
+    o1.onclick = function () { var u = si.value.trim(); if (/^https:\/\//.test(u)) window.open(u, '_blank', 'noopener'); else toast('Hãy dán link Google Sheet vào ô phía trên.'); };
+    var o2 = document.createElement('button'); o2.type = 'button'; o2.className = 'sm'; o2.textContent = 'Sao chép mã Apps Script';
+    o2.onclick = function () { copyPlain(APPS_SCRIPT, 'Đã sao chép mã Apps Script'); };
+    rr.append(o1, o2); box.append(rr);
+    var dd = document.createElement('details'); dd.className = 'help';
+    var sm = document.createElement('summary'); sm.textContent = 'Hướng dẫn cài 5 bước (làm một lần)'; sm.style.cursor = 'pointer'; dd.append(sm);
+    var ol = document.createElement('ol'); ol.style.cssText = 'margin:8px 0 0;padding-left:20px;display:grid;gap:6px';
+    ['Mở sheets.new để tạo một Google Sheet trống, đặt tên "Xác nhận tham dự".',
+     'Trong Sheet, vào menu Tiện ích mở rộng (Extensions) → Apps Script. Xóa hết mã có sẵn, bấm "Sao chép mã Apps Script" ở trên rồi dán vào và bấm Lưu.',
+     'Bấm Triển khai (Deploy) → Tùy chọn triển khai mới → chọn loại Ứng dụng web. Ở "Thực thi bằng": chọn Tôi. Ở "Ai có quyền truy cập": chọn Bất kỳ ai. Bấm Triển khai và cấp quyền khi Google hỏi.',
+     'Sao chép URL ứng dụng web (kết thúc bằng /exec) và dán vào ô "Link nhận xác nhận" phía trên, rồi bấm Đăng thiệp.',
+     'Dán link của Google Sheet vào ô thứ hai để mở danh sách nhanh. Thử gửi một xác nhận trên thiệp: một dòng mới sẽ hiện trong Sheet.'
+    ].forEach(function (t) { var li = document.createElement('li'); li.textContent = t; ol.append(li); });
+    dd.append(ol); box.append(dd);
     var mh = document.createElement('h3'); mh.textContent = 'Nhạc nền'; box.append(mh);
     var mp = document.createElement('p'); mp.className = 'help';
     mp.textContent = 'Chỉ dùng nhạc bạn có quyền sử dụng. Nhạc phát khi khách bấm "Mở thiệp", khách có nút tắt hoặc bật ở góc màn hình. File mp3 tối đa 15 MB.';

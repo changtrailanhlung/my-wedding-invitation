@@ -301,6 +301,7 @@
       el.classList.toggle('empty', !src);
       el.style.backgroundImage = src ? 'url("' + src + '")' : '';
     });
+    $('#rsvpForm button[type=submit]').textContent = /^https:\/\/script\.google\.com\//.test((state.rsvpUrl || '').trim()) ? 'Gửi xác nhận' : 'Soạn lời xác nhận';
     fxSet(state.effect || 'none');
     musicSync();
     tick();
@@ -339,6 +340,20 @@
     var lastMsg = '';
     $('#rsvpForm').addEventListener('submit', function (e) {
       e.preventDefault();
+      var url = (state.rsvpUrl || '').trim();
+      if (/^https:\/\/script\.google\.com\//.test(url)) {
+        var btn = $('#rsvpForm button[type=submit]'), label = btn.textContent;
+        btn.disabled = true; btn.textContent = 'Đang gửi...';
+        var payload = { name: $('#gName').value.trim(), count: $('#gCount').value, note: $('#gNote').value.trim() };
+        fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+          .then(function () {
+            $('#rsvpSent').hidden = false; $('#rsvpDone').hidden = true; $('#rsvpForm').reset();
+            var br = btn.getBoundingClientRect(); for (var k = 0; k < 4; k++) fxPuff(br.left + br.width / 2, br.top + br.height / 2);
+          })
+          .catch(function () { toast('Chưa gửi được, hãy kiểm tra mạng rồi thử lại.'); })
+          .then(function () { btn.disabled = false; btn.textContent = label; });
+        return;
+      }
       var dt = parseDate(state.date), note = $('#gNote').value.trim();
       lastMsg = 'Xác nhận tham dự tiệc cưới ' + state.groomName + ' & ' + state.brideName + (dt ? ' ngày ' + dt.txt : '') +
         '\nHọ tên: ' + $('#gName').value.trim() + '\nSố người: ' + $('#gCount').value + (note ? '\nLời chúc: ' + note : '');
