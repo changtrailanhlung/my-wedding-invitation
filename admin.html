@@ -33,6 +33,13 @@ body.admin{padding:0;background:var(--bg)}
 .img-row{display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;font-size:13px}
 .img-row .th{width:56px;height:56px;border-radius:4px;background:var(--tint) center/cover}
 .img-row .acts{display:flex;gap:6px}
+.presets{display:flex;flex-wrap:wrap;gap:8px}
+.preset{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:0 12px 0 8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;cursor:pointer;font-size:13px}
+.preset i{display:inline-flex;width:26px;height:18px;border-radius:9px;overflow:hidden;border:1px solid var(--line)}
+.preset i b{flex:1}
+.colorrow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;font-size:13px;color:var(--muted)}
+.colorrow input[type=color]{width:52px;min-height:38px;padding:2px;cursor:pointer}
+.rng{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
 .prev{position:sticky;top:76px;min-width:0}
 .prev iframe{width:100%;height:calc(100vh - 100px);min-height:560px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
 @media (max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}.prev{position:static}.prev iframe{height:720px}}
@@ -88,7 +95,17 @@ body.admin{padding:0;background:var(--bg)}
     ['Gia đình', [['groomFamily', 'Nhà trai (mỗi dòng một người)', 'area'], ['brideFamily', 'Nhà gái (mỗi dòng một người)', 'area']]],
     ['Liên hệ & mừng cưới', [['contactName', 'Người nhận xác nhận'], ['contactPhone', 'Số điện thoại / Zalo'], ['bankName', 'Ngân hàng'], ['bankAcc', 'Số tài khoản (để trống nếu muốn ẩn phần mừng cưới)'], ['bankHolder', 'Chủ tài khoản']]]
   ];
-  var IMGS = [['cover', 'Ảnh bìa'], ['couple', 'Ảnh cô dâu chú rể'], ['g1', 'Album 1'], ['g2', 'Album 2'], ['g3', 'Album 3'], ['g4', 'Album 4'], ['qr', 'Mã QR mừng cưới']];
+  var COLORS = [['accent', 'Màu chủ đạo (nút, chữ nhấn)', '#A64B63'], ['pageBg', 'Màu nền trang', '#E9EEF4'], ['cardBg', 'Màu nền thiệp', '#FBFCFD'], ['textColor', 'Màu chữ', '#1C2735']];
+  var PRESETS = [
+    { name: 'Mặc định', accent: '', pageBg: '', cardBg: '', textColor: '' },
+    { name: 'Hồng khói', accent: '#B5546F', pageBg: '#F3E9EC', cardBg: '#FFFBFC', textColor: '#3A2530' },
+    { name: 'Xanh biển', accent: '#2F6F9F', pageBg: '#E3EEF6', cardBg: '#FAFCFE', textColor: '#17283A' },
+    { name: 'Xanh sage', accent: '#5E7F63', pageBg: '#E8EEE6', cardBg: '#FAFCF8', textColor: '#243126' },
+    { name: 'Đỏ đô', accent: '#8E1F3A', pageBg: '#F1E6D8', cardBg: '#FFFBF4', textColor: '#3A1A22' },
+    { name: 'Tím lavender', accent: '#7A5CB0', pageBg: '#ECE7F5', cardBg: '#FDFBFF', textColor: '#2B2240' },
+    { name: 'Đen vàng', accent: '#D4AF6A', pageBg: '#0E0E12', cardBg: '#17171D', textColor: '#F2EBDD' }
+  ];
+  var IMGS = [['cover', 'Ảnh bìa'], ['couple', 'Ảnh cô dâu chú rể'], ['g1', 'Album 1'], ['g2', 'Album 2'], ['g3', 'Album 3'], ['g4', 'Album 4'], ['qr', 'Mã QR mừng cưới'], ['bg', 'Ảnh nền trang (tuỳ chọn)']];
 
   function $(s) { return document.querySelector(s); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -192,6 +209,39 @@ body.admin{padding:0;background:var(--bg)}
         l.append(inp); box.append(l);
       });
     });
+    var th = document.createElement('h3'); th.textContent = 'Màu sắc & hiệu ứng'; box.append(th);
+    var pr = document.createElement('div'); pr.className = 'presets';
+    PRESETS.forEach(function (p) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'preset';
+      var sw = document.createElement('i');
+      [p.pageBg || '#E9EEF4', p.cardBg || '#FBFCFD', p.accent || '#A64B63'].forEach(function (col) { var x = document.createElement('b'); x.style.background = col; sw.append(x); });
+      b.append(sw, p.name);
+      b.onclick = function () { ['accent', 'pageBg', 'cardBg', 'textColor'].forEach(function (k) { cfg[k] = p[k]; }); buildForm(); changed(); };
+      pr.append(b);
+    });
+    box.append(pr);
+    COLORS.forEach(function (c) {
+      var k = c[0], row = document.createElement('div'); row.className = 'colorrow';
+      var l = document.createElement('label'); l.htmlFor = 'f_' + k; l.textContent = c[1] + (cfg[k] ? '' : ' (đang dùng mặc định)');
+      var inp = document.createElement('input'); inp.type = 'color'; inp.id = 'f_' + k; inp.value = /^#[0-9a-fA-F]{6}$/.test(cfg[k]) ? cfg[k] : c[2];
+      inp.addEventListener('input', function () { cfg[k] = inp.value; l.textContent = c[1]; changed(); });
+      var rs = document.createElement('button'); rs.type = 'button'; rs.className = 'sm'; rs.textContent = 'Mặc định';
+      rs.onclick = function () { cfg[k] = ''; buildForm(); changed(); };
+      row.append(l, inp, rs); box.append(row);
+    });
+    var el = document.createElement('label'); el.htmlFor = 'f_effect'; el.append('Hiệu ứng rơi trên thiệp');
+    var sel = document.createElement('select'); sel.id = 'f_effect';
+    [['petal', 'Cánh hoa rơi'], ['heart', 'Trái tim bay'], ['sparkle', 'Lấp lánh'], ['none', 'Tắt hiệu ứng']].forEach(function (o) {
+      var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; if ((cfg.effect || 'none') === o[0]) op.selected = true; sel.append(op);
+    });
+    sel.addEventListener('change', function () { cfg.effect = sel.value; changed(); });
+    el.append(sel); box.append(el);
+    var ol = document.createElement('label'); ol.htmlFor = 'f_overlay'; ol.append('Độ rõ của nền thiệp trên ảnh nền (chỉ dùng khi có ảnh nền)');
+    var rg = document.createElement('div'); rg.className = 'rng';
+    var ro = document.createElement('input'); ro.type = 'range'; ro.id = 'f_overlay'; ro.min = 40; ro.max = 100; ro.value = cfg.overlay || 88;
+    var rv = document.createElement('span'); rv.textContent = (cfg.overlay || 88) + '%';
+    ro.addEventListener('input', function () { cfg.overlay = +ro.value; rv.textContent = ro.value + '%'; changed(); });
+    rg.append(ro, rv); ol.append(rg); box.append(ol);
     var h = document.createElement('h3'); h.textContent = 'Hình ảnh'; box.append(h);
     IMGS.forEach(function (it) {
       var k = it[0], row = document.createElement('div'); row.className = 'img-row';

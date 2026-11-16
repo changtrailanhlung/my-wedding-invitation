@@ -12,5 +12,7 @@ window.INVITE_DEFAULTS = {
   rsvpDeadline: '2027-01-15', contactName: 'cô dâu chú rể', contactPhone: '0900 000 000',
   bankName: 'Vietcombank', bankAcc: '0123456789', bankHolder: 'NGUYEN QUOC ANH',
   thanks: 'Sự hiện diện của Quý vị\nlà niềm vinh hạnh\nđối với gia đình chúng tôi.',
+  accent: '', pageBg: '', cardBg: '', textColor: '',
+  effect: 'petal', overlay: 88,
   images: {}
 };
