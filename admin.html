@@ -112,9 +112,11 @@ body.admin{padding:0;background:var(--bg)}
     if (sha) body.sha = sha;
     var r = await gh('/contents/' + path, { method: 'PUT', body: JSON.stringify(body) });
     if (!r.ok) {
-      if (r.status === 401 || r.status === 403 || r.status === 404) throw new Error('Token không có quyền ghi vào kho này.');
-      if (r.status === 409 || r.status === 422) throw new Error('Có người vừa cập nhật cùng lúc. Hãy tải lại trang rồi thử lại.');
-      throw new Error('GitHub báo lỗi ' + r.status);
+      var detail = ''; try { detail = (await r.json()).message || ''; } catch (e) {}
+      if (r.status === 401) throw new Error('Token hết hạn hoặc sai. Hãy đăng xuất rồi dán token mới. (' + detail + ')');
+      if (r.status === 403 || r.status === 404) throw new Error('Token chưa có quyền ghi. Trong GitHub, mở token và đặt Repository permissions → Contents thành "Read and write". (' + r.status + ': ' + detail + ')');
+      if (r.status === 409) throw new Error('Có người vừa cập nhật cùng lúc. Hãy tải lại trang rồi thử lại.');
+      throw new Error('GitHub báo lỗi ' + r.status + (detail ? ': ' + detail : ''));
     }
   }
 
