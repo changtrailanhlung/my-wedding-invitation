@@ -192,6 +192,15 @@
     });
   }
 
+  var mapQ = null, mapT = 0;
+  function setMap(q) {
+    if (q === mapQ) return;
+    var first = mapQ === null; mapQ = q;
+    clearTimeout(mapT);
+    var go = function () { $('#mapFrame').src = 'https://www.google.com/maps?q=' + encodeURIComponent(q) + '&output=embed'; };
+    if (first) go(); else mapT = setTimeout(go, 600);
+  }
+
   function render() {
     applyTheme();
     $$('[data-t]').forEach(function (el) { el.textContent = state[el.dataset.t] || ''; });
@@ -207,7 +216,10 @@
     $('#dressRow').hidden = !(state.dress || '').trim();
     $('#giftSec').hidden = !(state.bankAcc || '').trim();
     var place = (state.venue + ' ' + state.address).trim();
-    $('#mapLink').href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(place);
+    var q = (state.mapQuery || '').trim() || place;
+    var ml = (state.mapLink || '').trim();
+    $('#mapLink').href = /^https?:\/\//i.test(ml) ? ml : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+    setMap(q);
     var digits = (state.contactPhone || '').replace(/\D/g, '');
     $('#zaloLink').href = digits ? 'https://zalo.me/' + digits : '#';
     if (dt) {

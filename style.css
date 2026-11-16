@@ -138,8 +138,13 @@ body.opened #openBtn{display:none}
 body.opened .swipe{display:block}
 @media (prefers-reduced-motion:no-preference){.swipe::after{animation:bob 1.6s ease-in-out infinite}@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}}
 
-/* Nút nhạc nền */
-.music{position:fixed;z-index:30;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:46px;height:46px;border-radius:50%;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.25);padding:0}
-.music::after{content:"";position:absolute;width:28px;height:2px;background:currentColor;transform:rotate(-45deg);border-radius:2px}
+/* Nút nhạc nền: nhỏ, tròn trắng, cố định góc trái dưới */
+.music{position:fixed;z-index:30;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--accent);display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);padding:0}
+.music svg{width:20px;height:20px}
+.music::after{content:"";position:absolute;width:24px;height:2px;background:currentColor;transform:rotate(-45deg);border-radius:2px}
 .music.playing::after{display:none}
-@media (prefers-reduced-motion:no-preference){.music.playing svg{animation:spin 5s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}}
+@media (prefers-reduced-motion:no-preference){.music.playing svg{animation:spin 4s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}}
+
+/* Bản đồ */
+.map{margin-top:28px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--tint);aspect-ratio:4/3}
+.map iframe{width:100%;height:100%;border:0;display:block}
