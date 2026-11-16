@@ -23,5 +23,13 @@
   "bankAcc": "0123456789",
   "bankHolder": "abc",
   "thanks": "Sự hiện diện của Quý vị\nlà niềm vinh hạnh\nđối với gia đình chúng tôi.",
+  "accent": "",
+  "pageBg": "",
+  "cardBg": "",
+  "textColor": "",
+  "effect": "heart",
+  "overlay": 88,
+  "music": "",
+  "musicName": "",
   "images": {}
 }
