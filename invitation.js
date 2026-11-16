@@ -145,6 +145,26 @@
       fxPuff(e.clientX, e.clientY);
     });
   }
+  function initPointer() {
+    var last = 0;
+    document.addEventListener('pointermove', function (e) {
+      if (reduced || fx.type === 'none' || !fx.cv || e.pointerType !== 'mouse' || fx.burst.length > 150) return;
+      var n = performance.now(); if (n - last < 45) return; last = n;
+      var p = newPart(false);
+      p.x = e.clientX; p.y = e.clientY; p.vx = (Math.random() - 0.5) * 1.2; p.vy = (Math.random() - 0.2) * 1.2; p.vr = (Math.random() - 0.5) * 0.2;
+      p.life = 0.7; p.s = fx.type === 'sparkle' ? 2.5 + Math.random() * 2.5 : 4 + Math.random() * 4;
+      fx.burst.push(p); fxKick();
+    });
+    var arch = $('.arch');
+    if (arch && !reduced) {
+      arch.addEventListener('pointermove', function (e) {
+        if (e.pointerType !== 'mouse') return;
+        var r = arch.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+        arch.style.transform = 'perspective(700px) rotateY(' + (x * 10) + 'deg) rotateX(' + (-y * 10) + 'deg)';
+      });
+      arch.addEventListener('pointerleave', function () { arch.style.transform = ''; });
+    }
+  }
   function initScroll() {
     var bar = document.createElement('div'); bar.id = 'progress'; bar.setAttribute('aria-hidden', 'true'); document.body.append(bar);
     var hero = $('.hero .slot'), pending = false;
@@ -238,7 +258,14 @@
 
   function render() {
     applyTheme();
-    $$('[data-t]').forEach(function (el) { el.textContent = state[el.dataset.t] || ''; });
+    $$('[data-t]:not([data-lines])').forEach(function (el) { el.textContent = state[el.dataset.t] || ''; });
+    $$('[data-lines]').forEach(function (el) {
+      var t = state[el.dataset.t] || '';
+      if (el.dataset.built === t) return;
+      el.textContent = '';
+      t.split('\n').forEach(function (l, i) { var s = document.createElement('span'); s.className = 'ln'; s.style.setProperty('--i', i); s.textContent = l || '\u00a0'; el.append(s); });
+      el.dataset.built = t;
+    });
     var dt = parseDate(state.date);
     $('#heroDate').textContent = dt ? pad(dt.d) + ' · ' + pad(dt.mo) + ' · ' + dt.y : '';
     $('#dayNum').textContent = dt ? pad(dt.d) : '--';
@@ -279,13 +306,19 @@
     tick();
   }
 
+  function setNum(sel, v) {
+    var el = $(sel); if (el.textContent === v) return;
+    el.textContent = v;
+    if (!reduced && el.dataset.set) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+    el.dataset.set = '1';
+  }
   function tick() {
     var target = new Date(state.date + 'T' + state.startTime + ':00+07:00').getTime();
     var s = Math.floor((isNaN(target) ? 0 : Math.max(0, target - Date.now())) / 1000);
-    $('#cd').textContent = pad(Math.floor(s / 86400));
-    $('#ch').textContent = pad(Math.floor(s % 86400 / 3600));
-    $('#cm').textContent = pad(Math.floor(s % 3600 / 60));
-    $('#cs').textContent = pad(s % 60);
+    setNum('#cd', pad(Math.floor(s / 86400)));
+    setNum('#ch', pad(Math.floor(s % 86400 / 3600)));
+    setNum('#cm', pad(Math.floor(s % 3600 / 60)));
+    setNum('#cs', pad(s % 60));
   }
 
   var tt;
@@ -310,6 +343,8 @@
       lastMsg = 'Xác nhận tham dự tiệc cưới ' + state.groomName + ' & ' + state.brideName + (dt ? ' ngày ' + dt.txt : '') +
         '\nHọ tên: ' + $('#gName').value.trim() + '\nSố người: ' + $('#gCount').value + (note ? '\nLời chúc: ' + note : '');
       $('#rsvpText').textContent = lastMsg; $('#rsvpDone').hidden = false;
+      var br = $('#rsvpForm button[type=submit]').getBoundingClientRect();
+      for (var k = 0; k < 4; k++) fxPuff(br.left + br.width / 2, br.top + br.height / 2);
       copyText(lastMsg, 'Đã sao chép lời xác nhận');
     });
     $('#copyAgain').addEventListener('click', function () { copyText(lastMsg, 'Đã sao chép lời xác nhận'); });
@@ -338,6 +373,7 @@
     initReveal();
     initScroll();
     initPuff();
+    initPointer();
     setInterval(tick, 1000);
     window.addEventListener('message', function (e) {
       if (e.origin !== location.origin || !e.data || e.data.type !== 'config') return;
