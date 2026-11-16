@@ -273,7 +273,6 @@
     tl.textContent = 'Đón khách ' + state.receptionTime + ' · Khai tiệc ' + state.startTime;
     var small = document.createElement('small'); small.textContent = dt ? dt.wd + ', ' + dt.txt : ''; tl.append(small);
     var rd = parseDate(state.rsvpDeadline); $('#rsvpDate').textContent = rd ? rd.txt : '';
-    $('#dressRow').hidden = !(state.dress || '').trim();
     $('#giftSec').hidden = !(state.bankAcc || '').trim();
     var place = (state.venue + ' ' + state.address).trim();
     var q = (state.mapQuery || '').trim() || place;
