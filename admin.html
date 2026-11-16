@@ -81,6 +81,7 @@ body.admin{padding:0;background:var(--bg)}
 
 <div class="toast" id="toast" role="status" hidden></div>
 <input type="file" accept="image/*" id="filePick" hidden>
+<input type="file" accept=".mp3,audio/mpeg" id="musicPick" hidden>
 
 <script src="defaults.js"></script>
 <script>
@@ -109,7 +110,7 @@ body.admin{padding:0;background:var(--bg)}
 
   function $(s) { return document.querySelector(s); }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
-  var token = '', cfg = null, saved = null, pending = {}, pickKey = null, busy = false;
+  var token = '', cfg = null, saved = null, pending = {}, pendingMusic = null, pickKey = null, busy = false;
   var tt; function toast(msg) { var t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(tt); tt = setTimeout(function () { t.hidden = true; }, 3800); }
 
   function gh(path, opts) {
@@ -176,12 +177,12 @@ body.admin{padding:0;background:var(--bg)}
   });
 
   /* Xem trước */
-  function previewCfg() { var c = clone(cfg); Object.keys(pending).forEach(function (k) { c.images[k] = pending[k]; }); return c; }
+  function previewCfg() { var c = clone(cfg); Object.keys(pending).forEach(function (k) { c.images[k] = pending[k]; }); if (pendingMusic) c.music = pendingMusic.url; return c; }
   function sendPreview() { var f = $('#frame'); if (f.contentWindow && cfg) f.contentWindow.postMessage({ type: 'config', config: previewCfg() }, location.origin); }
   window.addEventListener('message', function (e) {
     if (e.origin === location.origin && e.source === $('#frame').contentWindow && e.data && e.data.type === 'ready') sendPreview();
   });
-  function isDirty() { return JSON.stringify(cfg) !== JSON.stringify(saved) || Object.keys(pending).length > 0; }
+  function isDirty() { return JSON.stringify(cfg) !== JSON.stringify(saved) || Object.keys(pending).length > 0 || !!pendingMusic; }
   function refreshStatus() {
     var d = isDirty(), s = $('#status');
     s.textContent = d ? 'Có thay đổi chưa đăng. Khách chưa nhìn thấy.' : 'Chưa có thay đổi';
@@ -192,6 +193,16 @@ body.admin{padding:0;background:var(--bg)}
   window.addEventListener('beforeunload', function (e) { if (cfg && isDirty()) { e.preventDefault(); e.returnValue = ''; } });
 
   /* Form */
+  function clearMusic() { if (pendingMusic) { try { URL.revokeObjectURL(pendingMusic.url); } catch (e) {} } pendingMusic = null; }
+  function fileB64(file) {
+    return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(String(r.result).split(',')[1]); }; r.onerror = function () { rej(new Error('Không đọc được file nhạc.')); }; r.readAsDataURL(file); });
+  }
+  $('#musicPick').addEventListener('change', function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    if (f.size > 15 * 1048576) { toast('File nhạc nặng quá 15 MB. Hãy chọn file nhẹ hơn hoặc nén lại.'); return; }
+    clearMusic(); pendingMusic = { blob: f, name: f.name, size: f.size, url: URL.createObjectURL(f) };
+    buildForm(); changed();
+  });
   function srcOf(k) { return pending[k] || cfg.images[k] || ''; }
   function buildForm() {
     var box = $('#formBox'); box.textContent = '';
@@ -242,6 +253,28 @@ body.admin{padding:0;background:var(--bg)}
     var rv = document.createElement('span'); rv.textContent = (cfg.overlay || 88) + '%';
     ro.addEventListener('input', function () { cfg.overlay = +ro.value; rv.textContent = ro.value + '%'; changed(); });
     rg.append(ro, rv); ol.append(rg); box.append(ol);
+    var mh = document.createElement('h3'); mh.textContent = 'Nhạc nền'; box.append(mh);
+    var mp = document.createElement('p'); mp.className = 'help';
+    mp.textContent = 'Chỉ dùng nhạc bạn có quyền sử dụng. Nhạc phát khi khách bấm "Mở thiệp", khách có nút tắt hoặc bật ở góc màn hình. File mp3 tối đa 15 MB.';
+    box.append(mp);
+    var cur = document.createElement('p'); cur.className = 'help'; cur.style.color = 'var(--ink)';
+    function curText() { cur.textContent = pendingMusic ? 'Đã chọn: ' + pendingMusic.name + ' (' + (pendingMusic.size / 1048576).toFixed(1) + ' MB), chưa đăng.' : (cfg.music ? 'Đang dùng: ' + cfg.music.replace(/\?.*$/, '') : 'Chưa có nhạc nền.'); }
+    curText(); box.append(cur);
+    var mr = document.createElement('div'); mr.className = 'row2';
+    var mb1 = document.createElement('button'); mb1.type = 'button'; mb1.className = 'sm pri'; mb1.textContent = 'Tải file mp3 lên';
+    mb1.onclick = function () { $('#musicPick').value = ''; $('#musicPick').click(); };
+    var mb2 = document.createElement('button'); mb2.type = 'button'; mb2.className = 'sm'; mb2.textContent = 'Gỡ nhạc';
+    mb2.onclick = function () { clearMusic(); cfg.music = ''; buildForm(); changed(); };
+    mr.append(mb1, mb2); box.append(mr);
+    var nl = document.createElement('label'); nl.htmlFor = 'f_musicName'; nl.append('Tên bài hát (tuỳ chọn)');
+    var ni = document.createElement('input'); ni.id = 'f_musicName'; ni.value = cfg.musicName || '';
+    ni.addEventListener('input', function () { cfg.musicName = ni.value; changed(); });
+    nl.append(ni); box.append(nl);
+    var ll = document.createElement('label'); ll.htmlFor = 'f_music'; ll.append('Hoặc dán link trực tiếp tới file .mp3');
+    var li = document.createElement('input'); li.id = 'f_music'; li.type = 'url'; li.placeholder = 'https://.../bai-hat.mp3';
+    li.value = (cfg.music && !/^assets\//.test(cfg.music)) ? cfg.music : '';
+    li.addEventListener('input', function () { clearMusic(); cfg.music = li.value.trim(); curText(); changed(); });
+    ll.append(li); box.append(ll);
     var h = document.createElement('h3'); h.textContent = 'Hình ảnh'; box.append(h);
     IMGS.forEach(function (it) {
       var k = it[0], row = document.createElement('div'); row.className = 'img-row';
@@ -284,15 +317,20 @@ body.admin{padding:0;background:var(--bg)}
         await putFile('images/' + key + '.jpg', pending[key].split(',')[1], 'Cập nhật ảnh ' + key);
         next.images[key] = 'images/' + key + '.jpg?v=' + stamp;
       }
+      if (pendingMusic) {
+        btn.textContent = 'Đang tải nhạc...';
+        await putFile('assets/music.mp3', await fileB64(pendingMusic.blob), 'Cập nhật nhạc nền');
+        next.music = 'assets/music.mp3?v=' + stamp;
+      }
       btn.textContent = 'Đang lưu nội dung...';
       await putFile('config.json', b64utf8(JSON.stringify(next, null, 2) + '\n'), 'Cập nhật nội dung thiệp');
-      cfg = next; saved = clone(next); pending = {};
+      cfg = next; saved = clone(next); pending = {}; clearMusic();
       buildForm(); toast('Đã đăng thiệp. Trang cho khách cập nhật sau 1 đến 2 phút.');
     } catch (ex) { toast(ex.message || 'Chưa đăng được, hãy thử lại.'); }
     busy = false; btn.textContent = 'Đăng thiệp'; refreshStatus(); sendPreview();
   });
   $('#revertBtn').addEventListener('click', function () {
-    cfg = clone(saved); pending = {}; buildForm(); changed();
+    cfg = clone(saved); pending = {}; clearMusic(); buildForm(); changed();
   });
 
   /* Tự đăng nhập lại nếu đã lưu token */

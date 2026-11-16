@@ -170,6 +170,28 @@
     document.body.classList.add('rv-on');
   }
 
+  /* ===== Nhạc nền ===== */
+  var bgm = { a: null, src: '' };
+  function musicSync() {
+    var btn = $('#musicBtn'), src = state.music || '';
+    if (!src) { if (bgm.a) bgm.a.pause(); bgm.src = ''; btn.hidden = true; return; }
+    if (!bgm.a) {
+      bgm.a = new Audio(); bgm.a.loop = true; bgm.a.volume = 0.7; bgm.a.preload = 'none';
+      bgm.a.addEventListener('play', function () { btn.classList.add('playing'); btn.setAttribute('aria-pressed', 'true'); });
+      bgm.a.addEventListener('pause', function () { btn.classList.remove('playing'); btn.setAttribute('aria-pressed', 'false'); });
+    }
+    if (bgm.src !== src) { var was = !bgm.a.paused; bgm.a.src = src; bgm.src = src; if (was) bgm.a.play().catch(function () {}); }
+    btn.title = state.musicName ? 'Nhạc nền: ' + state.musicName : 'Nhạc nền';
+    btn.hidden = !(isPreview || document.body.classList.contains('opened'));
+  }
+  function initMusic() {
+    $('#musicBtn').addEventListener('click', function () {
+      if (!bgm.a) return;
+      if (bgm.a.paused) bgm.a.play().catch(function () { toast('Trình duyệt chưa cho phát nhạc, hãy bấm lại.'); });
+      else bgm.a.pause();
+    });
+  }
+
   function render() {
     applyTheme();
     $$('[data-t]').forEach(function (el) { el.textContent = state[el.dataset.t] || ''; });
@@ -206,6 +228,7 @@
       el.style.backgroundImage = src ? 'url("' + src + '")' : '';
     });
     fxSet(state.effect || 'none');
+    musicSync();
     tick();
   }
 
@@ -246,8 +269,8 @@
     $('#copyAcc').addEventListener('click', function () { copyText((state.bankAcc || '').replace(/\s/g, ''), 'Đã sao chép số tài khoản'); });
   }
 
-  function show() { document.body.classList.remove('loading'); }
   var isPreview = /[?&]preview\b/.test(location.search);
+  function show() { document.body.classList.remove('loading'); }
   function initSeal() {
     if (isPreview) return;
     document.body.classList.add('sealed');
@@ -255,12 +278,15 @@
       e.preventDefault();
       document.body.classList.remove('sealed'); document.body.classList.add('opened');
       fxBurst();
+      musicSync();
+      if (bgm.a) bgm.a.play().catch(function () {});
       var t = $('#ngay'); if (t) t.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
     });
   }
 
   function boot() {
     initSeal();
+    initMusic();
     initRsvp();
     initReveal();
     setInterval(tick, 1000);
