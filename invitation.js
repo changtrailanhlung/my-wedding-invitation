@@ -166,12 +166,10 @@
     }
   }
   function initScroll() {
-    var bar = document.createElement('div'); bar.id = 'progress'; bar.setAttribute('aria-hidden', 'true'); document.body.append(bar);
     var hero = $('.hero .slot'), pending = false;
     function upd() {
       pending = false;
-      var h = document.documentElement.scrollHeight - window.innerHeight, y = window.scrollY || 0;
-      bar.style.transform = 'scaleX(' + (h > 0 ? Math.min(1, y / h) : 0) + ')';
+      var y = window.scrollY || 0;
       if (hero && !reduced) hero.style.setProperty('--py', Math.max(0, Math.min(40, y * 0.25)) + 'px');
     }
     window.addEventListener('scroll', function () { if (!pending) { pending = true; requestAnimationFrame(upd); } }, { passive: true });
