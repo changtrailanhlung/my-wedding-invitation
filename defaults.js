@@ -13,6 +13,6 @@ window.INVITE_DEFAULTS = {
   thanks: 'Sự hiện diện của Quý vị\nlà niềm vinh hạnh\nđối với gia đình chúng tôi.',
   accent: '', pageBg: '', cardBg: '', textColor: '',
   effect: 'petal', overlay: 88,
-  music: '', musicName: '', mapQuery: '', mapLink: '', rsvpUrl: '', fontStyle: 'script',
+  music: '', musicName: '', mapQuery: '', mapLink: '', rsvpUrl: '', fontStyle: 'classic',
   images: {}
 };

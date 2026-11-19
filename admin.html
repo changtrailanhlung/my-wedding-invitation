@@ -257,7 +257,7 @@ body.admin{padding:0;background:var(--bg)}
     var fl = document.createElement('label'); fl.htmlFor = 'f_fontStyle'; fl.append('Kiểu chữ');
     var fs = document.createElement('select'); fs.id = 'f_fontStyle';
     [['script', 'Thư pháp mềm (Great Vibes)'], ['swirl', 'Thư pháp bay bổng (Pinyon Script)'], ['elegant', 'Thanh lịch (Cormorant Garamond)'], ['classic', 'Cổ điển (Playfair Display)']].forEach(function (o) {
-      var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; if ((cfg.fontStyle || 'script') === o[0]) op.selected = true; fs.append(op);
+      var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; if ((cfg.fontStyle || 'classic') === o[0]) op.selected = true; fs.append(op);
     });
     fs.addEventListener('change', function () { cfg.fontStyle = fs.value; changed(); });
     fl.append(fs); box.append(fl);
