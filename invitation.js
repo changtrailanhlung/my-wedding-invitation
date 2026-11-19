@@ -402,6 +402,15 @@
     ['copy', 'cut', 'contextmenu', 'selectstart', 'dragstart'].forEach(function (ev) {
       document.addEventListener(ev, function (e) { if (!inField(e.target)) e.preventDefault(); });
     });
+    if (isPreview) return; /* khung xem trước trong admin vẫn cho dùng F12 */
+    document.addEventListener('keydown', function (e) {
+      var c = e.ctrlKey || e.metaKey, code = e.code;
+      var dev = e.key === 'F12' ||
+        (c && e.shiftKey && (code === 'KeyI' || code === 'KeyJ' || code === 'KeyC' || code === 'KeyK')) ||
+        (c && code === 'KeyU') ||
+        (e.metaKey && e.altKey && (code === 'KeyI' || code === 'KeyJ' || code === 'KeyC' || code === 'KeyU'));
+      if (dev) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
   }
 
   function boot() {
