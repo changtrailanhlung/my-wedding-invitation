@@ -396,7 +396,16 @@
     });
   }
 
+  function initNoCopy() {
+    document.body.classList.add('nocopy');
+    function inField(t) { return !!(t && t.closest && t.closest('input,textarea,select')); }
+    ['copy', 'cut', 'contextmenu', 'selectstart', 'dragstart'].forEach(function (ev) {
+      document.addEventListener(ev, function (e) { if (!inField(e.target)) e.preventDefault(); });
+    });
+  }
+
   function boot() {
+    initNoCopy();
     initSeal();
     initMusic();
     initRsvp();

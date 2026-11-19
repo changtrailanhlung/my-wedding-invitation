@@ -206,3 +206,8 @@ h1,h2,h3{font-family:var(--font-display);font-weight:var(--disp-weight)}
 .thanks p{font-family:var(--font-display);font-style:italic;font-weight:var(--disp-weight);font-size:calc(22px*var(--disp-size));line-height:1.55}
 .hero-date{font-weight:500}
 .sec p{line-height:1.75}
+
+/* Khách không bôi đen hoặc sao chép nội dung thiệp (ô nhập vẫn dùng bình thường) */
+body.nocopy{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.nocopy input,body.nocopy textarea,body.nocopy select{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+body.nocopy img,body.nocopy .slot{-webkit-user-drag:none;user-drag:none}
