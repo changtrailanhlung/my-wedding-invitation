@@ -188,3 +188,21 @@ body.opened .swipe{display:block}
   @keyframes gmove{from{background-position:0 0}to{background-position:100% 100%}}
 }
 @media (prefers-reduced-motion:reduce){.bokeh{display:none}}
+
+/* Kiểu chữ: các biến này được invitation.js đổi theo lựa chọn trong admin */
+:root{--font-names:"Great Vibes","Pinyon Script","Playfair Display",Georgia,serif;--font-display:"Cormorant Garamond","Playfair Display",Georgia,serif;--names-style:normal;--names-scale:1.3;--disp-weight:500;--disp-size:1.18}
+body{font-weight:400;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3{font-family:var(--font-display);font-weight:var(--disp-weight)}
+.names{font-family:var(--font-names);font-style:var(--names-style);font-weight:400;font-size:calc(clamp(44px,13vw,68px)*var(--names-scale));line-height:1.18;letter-spacing:0;margin:2px 0}
+.names .amp{font-family:var(--font-display);font-style:italic;font-weight:500;font-size:.34em;letter-spacing:.05em;margin:0}
+.names>span:not(.amp){padding:.18em .22em;margin:-.18em -.22em}
+.sec h2{font-size:calc(30px*var(--disp-size));font-style:italic;line-height:1.25}
+.sec p.invite{font-family:var(--font-display);font-style:italic;font-weight:var(--disp-weight);font-size:calc(19px*var(--disp-size));line-height:1.75;color:var(--ink);max-width:30em}
+.pair h3{font-size:calc(22px*var(--disp-size));line-height:1.25;font-style:italic;font-weight:var(--disp-weight)}
+.day-num{font-family:var(--font-display);font-weight:var(--disp-weight);font-size:clamp(100px,32vw,150px);font-style:italic}
+.day-month{font-size:15px;letter-spacing:.24em;font-weight:500}
+.eyebrow{font-weight:500;letter-spacing:.28em}
+.count b,.gift .acc{font-family:var(--font-display);font-weight:600}
+.thanks p{font-family:var(--font-display);font-style:italic;font-weight:var(--disp-weight);font-size:calc(22px*var(--disp-size));line-height:1.55}
+.hero-date{font-weight:500}
+.sec p{line-height:1.75}

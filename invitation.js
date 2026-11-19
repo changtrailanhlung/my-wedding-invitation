@@ -27,6 +27,18 @@
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   }
   var THEME_VARS = ['--accent', '--accent-ink', '--bg', '--surface', '--ink', '--muted', '--line', '--tint', '--hero-a', '--hero-b', '--hero-c', '--bg-img', '--ov'];
+  var CG = "'Cormorant Garamond','Playfair Display',Georgia,serif";
+  var FONTS = {
+    script: { n: "'Great Vibes','Pinyon Script','Playfair Display',Georgia,serif", ns: 'normal', nsc: '1.3', d: CG, dw: '500', dsz: '1.18' },
+    swirl: { n: "'Pinyon Script','Great Vibes','Playfair Display',Georgia,serif", ns: 'normal', nsc: '1.32', d: CG, dw: '500', dsz: '1.18' },
+    elegant: { n: CG, ns: 'italic', nsc: '1.22', d: CG, dw: '500', dsz: '1.18' },
+    classic: { n: "'Playfair Display',Georgia,'Times New Roman',serif", ns: 'italic', nsc: '1', d: "'Playfair Display',Georgia,serif", dw: '400', dsz: '1' }
+  };
+  function applyFont() {
+    var f = FONTS[state.fontStyle] || FONTS.script, st = document.documentElement.style;
+    st.setProperty('--font-names', f.n); st.setProperty('--font-display', f.d); st.setProperty('--names-style', f.ns);
+    st.setProperty('--names-scale', f.nsc); st.setProperty('--disp-weight', f.dw); st.setProperty('--disp-size', f.dsz);
+  }
   function applyTheme() {
     var st = document.documentElement.style;
     THEME_VARS.forEach(function (k) { st.removeProperty(k); });
@@ -256,6 +268,7 @@
 
   function render() {
     applyTheme();
+    applyFont();
     $$('[data-t]:not([data-lines])').forEach(function (el) { el.textContent = state[el.dataset.t] || ''; });
     $$('[data-lines]').forEach(function (el) {
       var t = state[el.dataset.t] || '';

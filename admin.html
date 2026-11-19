@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Quản trị thiệp</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400;1,500;1,600&family=Great+Vibes&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,600;1,400;1,500&display=swap">
 <link rel="stylesheet" href="style.css">
 <style>
 body.admin{padding:0;background:var(--bg)}
@@ -254,6 +254,13 @@ body.admin{padding:0;background:var(--bg)}
       rs.onclick = function () { cfg[k] = ''; buildForm(); changed(); };
       row.append(l, inp, rs); box.append(row);
     });
+    var fl = document.createElement('label'); fl.htmlFor = 'f_fontStyle'; fl.append('Kiểu chữ');
+    var fs = document.createElement('select'); fs.id = 'f_fontStyle';
+    [['script', 'Thư pháp mềm (Great Vibes)'], ['swirl', 'Thư pháp bay bổng (Pinyon Script)'], ['elegant', 'Thanh lịch (Cormorant Garamond)'], ['classic', 'Cổ điển (Playfair Display)']].forEach(function (o) {
+      var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; if ((cfg.fontStyle || 'script') === o[0]) op.selected = true; fs.append(op);
+    });
+    fs.addEventListener('change', function () { cfg.fontStyle = fs.value; changed(); });
+    fl.append(fs); box.append(fl);
     var el = document.createElement('label'); el.htmlFor = 'f_effect'; el.append('Hiệu ứng rơi trên thiệp');
     var sel = document.createElement('select'); sel.id = 'f_effect';
     [['petal', 'Cánh hoa rơi'], ['heart', 'Trái tim bay'], ['sparkle', 'Lấp lánh'], ['none', 'Tắt hiệu ứng']].forEach(function (o) {
